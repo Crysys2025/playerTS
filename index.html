@@ -1,0 +1,279 @@
+<html><head><base href="/">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>TIERRADENTRO STEREO</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background: linear-gradient(45deg, #1a1a1a, #2d2d2d);
+    font-family: Arial, sans-serif;
+  }
+
+  .player-container {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 15px;
+    padding: 20px;
+    width: 90%;
+    max-width: 600px;
+    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+  }
+
+  .artwork-container {
+    width: 200px;
+    height: 200px;
+    margin: 0 auto 20px;
+    border-radius: 10px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    position: relative;
+  }
+
+  .artwork {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease;
+  }
+
+  .artwork.rotate {
+    animation: rotation 10s infinite linear;
+  }
+
+  @keyframes rotation {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(359deg);
+    }
+  }
+
+  .no-artwork {
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, #2c3e50, #3498db);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .no-artwork svg {
+    width: 50%;
+    height: 50%;
+    fill: rgba(255, 255, 255, 0.5);
+  }
+
+  .controls {
+    display: flex;
+    align-items: center;
+    gap: 20px;
+  }
+
+  .play-button {
+    background: #4CAF50;
+    border: none;
+    width: 60px;
+    height: 60px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.2s;
+  }
+
+  .play-button:hover {
+    transform: scale(1.1);
+  }
+
+  .play-button svg {
+    width: 30px;
+    height: 30px;
+    fill: white;
+  }
+
+  .volume-control {
+    flex-grow: 1;
+  }
+
+  .volume-slider {
+    width: 100%;
+    height: 5px;
+    -webkit-appearance: none;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 5px;
+    outline: none;
+  }
+
+  .volume-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 15px;
+    height: 15px;
+    background: #4CAF50;
+    border-radius: 50%;
+    cursor: pointer;
+  }
+
+  .metadata {
+    color: white;
+    margin-top: 20px;
+    padding: 15px;
+    background: rgba(255, 255, 255, 0.05);
+    border-radius: 10px;
+  }
+
+  .metadata-item {
+    margin: 10px 0;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .metadata-icon {
+    width: 20px;
+    height: 20px;
+    fill: #4CAF50;
+  }
+
+  .status {
+    color: white;
+    text-align: center;
+    margin-top: 15px;
+    font-size: 14px;
+  }
+</style>
+</head>
+<body>
+  <div class="player-container">
+    <div class="artwork-container">
+      <div class="no-artwork" id="defaultArtwork">
+        <svg viewBox="0 0 24 24">
+          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+        </svg>
+      </div>
+      <img id="artwork" class="artwork" style="display: none;" alt="Album artwork">
+    </div>
+
+    <div class="controls">
+      <button class="play-button" id="playButton">
+        <svg viewBox="0 0 24 24" id="playIcon">
+          <path d="M8 5v14l11-7z"/>
+        </svg>
+      </button>
+      <div class="volume-control">
+        <input type="range" class="volume-slider" id="volumeSlider" min="0" max="1" step="0.1" value="1">
+      </div>
+    </div>
+
+    <div class="status" id="status">Radio en pausa</div>
+    
+    <div class="metadata">
+      <div class="metadata-item">
+        <svg class="metadata-icon" viewBox="0 0 24 24">
+          <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+        </svg>
+        <span id="songTitle">Título: Cargando...</span>
+      </div>
+      <div class="metadata-item">
+        <svg class="metadata-icon" viewBox="0 0 24 24">
+          <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+        </svg>
+        <span id="artist">Artista: Cargando...</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const audio = new Audio('https://stream.zeno.fm/vt029ye33mruv');
+    const playButton = document.getElementById('playButton');
+    const playIcon = document.getElementById('playIcon');
+    const volumeSlider = document.getElementById('volumeSlider');
+    const status = document.getElementById('status');
+    const songTitle = document.getElementById('songTitle');
+    const artist = document.getElementById('artist');
+    const artwork = document.getElementById('artwork');
+    const defaultArtwork = document.getElementById('defaultArtwork');
+    let isPlaying = false;
+
+    // Función para actualizar metadatos usando la nueva API
+    function updateMetadata() {
+      fetch('https://websim.ai/p/vt029ye33mruv')
+        .then(response => response.json())
+        .then(data => {
+          if (data.metadata) {
+            const title = data.metadata.title || 'Desconocido';
+            const artistName = data.metadata.artist || 'Desconocido';
+            const artworkUrl = data.metadata.artwork;
+            
+            songTitle.textContent = `Título: ${title}`;
+            artist.textContent = `Artista: ${artistName}`;
+            
+            // Actualizar artwork si está disponible
+            if (artworkUrl) {
+              artwork.src = artworkUrl;
+              artwork.style.display = 'block';
+              defaultArtwork.style.display = 'none';
+              artwork.classList.add('rotate');
+            } else {
+              artwork.style.display = 'none';
+              defaultArtwork.style.display = 'flex';
+            }
+          }
+        })
+        .catch(error => {
+          console.error('Error al obtener metadatos:', error);
+          songTitle.textContent = 'Título: No disponible';
+          artist.textContent = 'Artista: No disponible';
+          artwork.style.display = 'none';
+          defaultArtwork.style.display = 'flex';
+        });
+    }
+
+    playButton.addEventListener('click', () => {
+      if (isPlaying) {
+        audio.pause();
+        playIcon.innerHTML = '<path d="M8 5v14l11-7z"/>';
+        status.textContent = 'Radio en pausa';
+        artwork.classList.remove('rotate');
+      } else {
+        audio.play();
+        playIcon.innerHTML = '<path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>';
+        status.textContent = 'Reproduciendo en vivo';
+        artwork.classList.add('rotate');
+        updateMetadata();
+      }
+      isPlaying = !isPlaying;
+    });
+
+    volumeSlider.addEventListener('input', (e) => {
+      audio.volume = e.target.value;
+    });
+
+    // Actualizar metadatos cada 30 segundos cuando esté reproduciendo
+    setInterval(() => {
+      if (isPlaying) {
+        updateMetadata();
+      }
+    }, 30000);
+
+    audio.addEventListener('error', () => {
+      status.textContent = 'Error al cargar la radio';
+    });
+
+    audio.addEventListener('waiting', () => {
+      status.textContent = 'Buffering...';
+    });
+
+    audio.addEventListener('playing', () => {
+      status.textContent = 'Reproduciendo en vivo';
+    });
+  </script>
+</body>
+</html>
